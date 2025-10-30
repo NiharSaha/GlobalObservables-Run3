@@ -26,13 +26,16 @@
 using namespace std;
 
 
-//void plot_hibin( TFile*file1,TFile*file11, TFile*file12, const int RUN) {
-void plot_hibin( TFile*file1, const int RUN) {
+void plot_hibin( TFile*file11,TFile*file12, TFile*file13) {
   gStyle->SetOptStat(0);
 
-  TTree* tree1 = (TTree*)file1->Get(Form("anaCentrality_%d", RUN));
-  TTree* tree2 = (TTree*)file1->Get(Form("anaCentrality_%d", RUN));
-  TTree* tree3 = (TTree*)file1->Get(Form("anaCentrality_%d", RUN));
+
+  TDirectory * dir11 = (TDirectory*)file11->Get("CentralityTable_HFtowers200_DataPbPb_periHYDJETshape_run3v140x01_offline_Nominal");
+  TDirectory * dir12 = (TDirectory*)file12->Get("CentralityTable_HFtowers200_DataPbPb_periHYDJETshape_run3v140x01_offline_Nominal");
+  TDirectory * dir13 = (TDirectory*)file13->Get("CentralityTable_HFtowers200_DataPbPb_periHYDJETshape_run3v140x01_offline_Nominal");
+  TTree* tree1 = (TTree*)dir11->Get("CentralityBin_wRun");
+  TTree* tree2 = (TTree*)dir12->Get("CentralityBin_wRun");
+  TTree* tree3 = (TTree*)dir13->Get("CentralityBin_wRun");
 
   TTreeReader reader1(tree1);
   TTreeReaderValue<Int_t> branchValue1(reader1, "newBin");
@@ -71,7 +74,6 @@ void plot_hibin( TFile*file1, const int RUN) {
    hibin_down->GetXaxis()->SetTitle("hiBin");
 
    hibin_down->GetYaxis()->SetTitle("Events");
-
    hibin_down->GetXaxis()->SetRange(1,100);
    hibin_down->GetXaxis()->CenterTitle(true);
    hibin_down->GetXaxis()->SetLabelFont(42);
@@ -82,10 +84,8 @@ void plot_hibin( TFile*file1, const int RUN) {
    hibin_down->GetYaxis()->SetLabelFont(42);
    hibin_down->GetYaxis()->SetTitleSize(0.05);
    hibin_down->GetYaxis()->SetTitleFont(132);
-   hibin_down->GetZaxis()->SetLabelFont(42);
-   hibin_down->GetZaxis()->SetTitleOffset(1);
-   hibin_down->GetZaxis()->SetTitleFont(42);
-   //hibin_down->Draw("E1");
+   
+   hibin_down->Draw("E1");
 
    hibin_up->SetTitle("");
    hibin_up->SetLineColor(9);
@@ -98,22 +98,17 @@ void plot_hibin( TFile*file1, const int RUN) {
    hibin_up->GetXaxis()->SetTitleFont(42);
    hibin_up->GetYaxis()->SetLabelFont(42);
    hibin_up->GetYaxis()->SetTitleFont(42);
-   hibin_up->GetZaxis()->SetLabelFont(42);
-   hibin_up->GetZaxis()->SetTitleOffset(1);
-   hibin_up->GetZaxis()->SetTitleFont(42);
-   //hibin_up->Draw("ESAME");
+   
+   hibin_up->Draw("ESAME");
 
-      hibin_nominal->SetTitle("");
+   hibin_nominal->SetTitle("");
    hibin_nominal->SetLineColor(2);
    hibin_nominal->SetMarkerColor(2);
    hibin_nominal->SetMarkerStyle(20);
    hibin_nominal->SetMarkerSize(1.2);
    //hibin_nominal->GetXaxis()->SetTitle("hiBin");
 
-   hibin_nominal->GetZaxis()->SetLabelFont(42);
-   hibin_nominal->GetZaxis()->SetTitleOffset(1);
-   hibin_nominal->GetZaxis()->SetTitleFont(42);
-   hibin_nominal->Draw("EP");
+   hibin_nominal->Draw("ESAME");
 
    
    TLegend *leg = new TLegend(0.1944035,0.2461832,0.5891016,0.3721374,NULL,"brNDC");
@@ -153,27 +148,22 @@ void plot_hibin( TFile*file1, const int RUN) {
    entry->SetTextFont(42);
    leg->Draw();
    
-   TLatex *   tex = new TLatex(139.0304,10422.94,"PbPb #sqrt{S_{NN}} = 5.36 TeV");
+   TLatex *   tex = new TLatex(139.0304,10422.94,"PbPb #sqrt{S_{NN}} = 5.36 TeV (2024)");
    tex->SetTextFont(132);
    tex->SetTextSize(0.04);
    tex->SetLineWidth(2);
    tex->Draw();
-      tex = new TLatex(-0.7832696,10244.56,"CMS");
+      tex = new TLatex(-0.7832696,10244.56,"#bf{CMS} #it{Preliminary}");
    tex->SetTextSize(0.04);
    tex->SetLineWidth(2);
    tex->Draw();
-      tex = new TLatex(17.23194,10244.56,"Preliminary");
-   tex->SetTextFont(52);
-   tex->SetTextSize(0.04);
-   tex->SetLineWidth(2);
-   tex->Draw();
-      tex = new TLatex(36.78254,3362.414,Form("Run = %d", RUN));
+   /*  tex = new TLatex(36.78254,3362.414,Form("Run = %d", RUN));
    tex->SetTextColor(2);
    tex->SetTextFont(42);
    tex->SetTextSize(0.04);
    tex->SetLineWidth(2);
    tex->Draw();
-  
+   */
   
   //canvas->SaveAs("histogram.png");
   
@@ -184,10 +174,11 @@ void plot_hibin( TFile*file1, const int RUN) {
 
 
 
-void plot_hiHF( TFile* file2, const int RUN) {
+//void plot_hiHF( TFile* file2, const int RUN) {
+void plot_hiHF( TFile* file2) {
   gStyle->SetOptStat(0);
 
-  TDirectory * dir = (TDirectory*)file2->Get(Form("CentralityTable_HFtowers200_DataPbPb_periHYDJETshape_run3v1302x04_offline_NOMINAL_Jan17_%d", RUN));  
+  TDirectory * dir = (TDirectory*)file2->Get("CentralityTable_HFtowers200_DataPbPb_periHYDJETshape_run3v140x01_offline_Nominal");
   TH1F* hist_data = (TH1F*)dir->Get("hfData1");
   TH1F* hist_MC = (TH1F*)dir->Get("hfMc1");
   TH1F* hist_combined = (TH1F*)dir->Get("hfCombined");
@@ -264,8 +255,8 @@ void plot_hiHF( TFile* file2, const int RUN) {
    legend->SetLineWidth(1);
    legend->SetFillColor(0);
    legend->SetFillStyle(1001);
-   legend->AddEntry(hist_data, "2023 RawPrime0", "lp");
-   legend->AddEntry(hist_MC, "Hydjet MC x 0.854", "lp");
+   legend->AddEntry(hist_data, "2024 RawPrime", "lp");
+   legend->AddEntry(hist_MC, "Hydjet MC x 1.012", "lp");
    legend->AddEntry(hist_combined, "Combined", "lp");
    legend->Draw();
 
@@ -279,7 +270,7 @@ void plot_hiHF( TFile* file2, const int RUN) {
    tex->SetLineWidth(2);
    tex->Draw();
 
-   tex = new TLatex(602.825,10.8071,"HLT_HIMinimumBiasHF1AND_v1");
+   tex = new TLatex(602.825,10.8071,"HLT_HIMinimumBiasHF1ANDZDC1nOR_v4");
   tex->SetTextFont(42);
   tex->SetTextSize(0.04);
   tex->SetLineWidth(2);
@@ -294,17 +285,17 @@ void plot_hiHF( TFile* file2, const int RUN) {
    tex->SetTextSize(0.04);
    tex->SetLineWidth(2);
    tex->Draw();
-      tex = new TLatex(613.4568,0.9840117,"pfConicFilter2Th4");
+      tex = new TLatex(613.4568,0.9840117,"pfConicFilterPF3Th5");
    tex->SetTextFont(42);
    tex->SetTextSize(0.04);
    tex->SetLineWidth(2);
    tex->Draw();
-   tex = new TLatex(2527.19,49145,Form("Run = %d", RUN));
+   /*tex = new TLatex(2527.19,49145,Form("Run = %d", RUN));
    tex->SetTextColor(2);
    tex->SetTextFont(42);
    tex->SetTextSize(0.04);
    tex->SetLineWidth(2);
-   tex->Draw();
+   tex->Draw();*/
       tex = new TLatex(2505.92,18213.2,"Threshold = 100");
    tex->SetTextFont(42);
    tex->SetTextSize(0.04110997);
@@ -381,31 +372,33 @@ void plot_hiHF( TFile* file2, const int RUN) {
     //file2->Close();
 }
 
-void plot_all(){
+void plot_all_PbPb2024(){
 
-    const int RUN = 374925;
-    //TFile *file1 = new TFile(Form("compare_centralitybins_2023Run_HYDMC_xSF0.85_pphfCoincFilter2Th4_Threshold100_NOMINAL_Normalisation1000_4000_run%d_HIPhysicsRawPrime0.root", RUN), "READ");
-    //TFile *file11 = new TFile(Form("compare_centralitybins_2023Run_HYDMC_xSF0.85_pphfCoincFilter2Th4_Threshold100_NOMINAL_Normalisation1000_4000_run%d_HIPhysicsRawPrime0.root", RUN), "READ");
-    //TFile *file12 = new TFile(Form("compare_centralitybins_2023Run_HYDMC_xSF0.85_pphfCoincFilter2Th4_Threshold100_NOMINAL_Normalisation1000_4000_run%d_HIPhysicsRawPrime0.root", RUN), "READ");
-
-    TFile *file1 = new TFile(Form("CentralityTable_HFtowers200_DataPbPb_usingMC_2023Run_HYDMC_xSF0.85_pphfCoincFilter2Th4_Threshold100_NOMINAL_Jan17_Normalisation1000_4000_run%d_HIPhysicsRawPrime0.root", RUN), "READ");
-
-
+    const int RUN = 388401;
     
+    //Nominal
+    TString inFile1 = "CentralityTable_HFtowers200_DataPbPb_usingMC_2024Run_HYDMC_xSF1.01_pphfCoincFilterPF3Th5_Threshold100_Nominal_Normalisation1000_4000_HIPhysicsRawPrime0_usinghiHF_Oct29.root";
+    //Sys Down
+    TString inFile2 = "CentralityTable_HFtowers200_DataPbPb_usingMC_2024Run_HYDMC_xSF1.01_pphfCoincFilterPF3Th5_Threshold50_SysDown_Normalisation1000_4000_HIPhysicsRawPrime0_usinghiHF_Oct29.root";
+    //Sys Up
+    TString inFile3 = "CentralityTable_HFtowers200_DataPbPb_usingMC_2024Run_HYDMC_xSF1.01_pphfCoincFilterPF3Th5_Threshold300_SysUp_Normalisation1000_4000_HIPhysicsRawPrime0_usinghiHF_Oct29.root";
 
-   
-    //TFile *file11 = new TFile(Form("compare_centralitybins_2023Run_HYDMC_xSF0.85_pphfCoincFilter2Th4_Threshold100_NOMINAL_Normalisation1000_4000_run%d_HIPhysicsRawPrime0.root", RUN), "READ");
-    //TFile *file12 = new TFile(Form("compare_centralitybins_2023Run_HYDMC_xSF0.85_pphfCoincFilter2Th4_Threshold100_NOMINAL_Normalisation1000_4000_run%d_HIPhysicsRawPrime0.root", RUN), "READ");
 
-    //TFile *file2 = new TFile(Form("compare_centralitybins_2023Run_HYDMC_xSF0.85_pphfCoincFilter2Th4_Threshold100_NOMINAL_Normalisation1000_4000_run%d_HIPhysicsRawPrime0.root", RUN), "READ");
 
-    TFile *file2 = new TFile(Form("compare_centralitybins_2023Run_HYDMC_xSF0.85_pphfCoincFilter2Th4_Threshold100_NOMINAL_Jan17_Normalisation1000_4000_run%d_HIPhysicsRawPrime0.root", RUN),"READ");
 
-    plot_hibin(file2, RUN);
-    //plot_hiHF(file1, RUN);
+    TFile *file1 = TFile::Open(inFile1);
+    TFile *file2 = TFile::Open(inFile1);
+    TFile *file3 = TFile::Open(inFile1);
+
+
+
+    plot_hibin(file1, file2, file3);    
+
+    //plot_hiHF(file1);
    
 
 
 
 }
+
 
