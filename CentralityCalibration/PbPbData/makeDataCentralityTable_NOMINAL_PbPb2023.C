@@ -20,12 +20,12 @@
 #include "DataFormats/HeavyIonEvent/interface/CentralityBins.h"
 
 void makeDataCentralityTable_NOMINAL_PbPb2023(
-					      const TString input_file = "forest_run387973_PF.txt",
+					      const TString input_file = "forest_run387973_PbPb2023.txt",
 					      const char * inputMC_file = "/eos/cms/store/group/phys_heavyions/nsaha/GO2024/2024PbPbRun3/forest_2024Run3_HYD2024_PFcand_27112024/Hydjet2024_v2/HiForest_2024Run3_HYD2024_new_PFcand_27112024/241127_054424/0000/HiForestMiniAOD_2024Run3_HYD2024_PFcand_27112024_out_combined.root"
 					      const char* HLT_trg = "HLT_HIMinimumBiasHF1ANDZDC1nOR_v4",
 					      const int RUN = 387973, 
 					      const char*RawPrime = "RawPrime0", 
-					      const char* CoinFilter = "pphfCoincFilterPF3Th5",
+					      const char* CoinFilter = "pphfCoincFilter2Th4",
 					      const double threshold = 100.0,
 					      const char* label = "Nominal", 
 					      const size_t nbins = 200
