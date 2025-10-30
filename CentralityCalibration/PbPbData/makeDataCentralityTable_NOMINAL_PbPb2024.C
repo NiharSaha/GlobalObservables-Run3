@@ -28,9 +28,9 @@ void makeDataCentralityTable_NOMINAL_PbPb2024(
 				     const char*RawPrime = "RawPrime0_usinghiHF", 
 				     const char* date = "Oct29",
 				     const char* CoinFilter = "pphfCoincFilterPF3Th5",
-				     const double threshold = 300.0,
-				     const char* label = "SysUp", 
-                                     const size_t nbins = 200
+				     const double threshold = 100.0,
+				     const char* label = "Nominal", 
+                     const size_t nbins = 200
 				     )
 {
   // Constant parameters
