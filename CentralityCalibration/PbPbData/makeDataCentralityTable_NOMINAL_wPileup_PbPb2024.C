@@ -19,27 +19,30 @@
 
 #include "DataFormats/HeavyIonEvent/interface/CentralityBins.h"
 
-void makeDataCentralityTable_NOMINAL(
-				     const TString input_file = "forest_run387973_PF.txt",
-                     const char * inputMC_file = "/eos/cms/store/group/phys_heavyions/nsaha/GO2024/2024PbPbRun3/forest_2024Run3_HYD2024_PFcand_27112024/Hydjet2024_v2/HiForest_2024Run3_HYD2024_new_PFcand_27112024/241127_054424/0000/HiForestMiniAOD_2024Run3_HYD2024_PFcand_27112024_out_combined.root"
+
+
+void makeDataCentralityTable_NOMINAL_wPileup_PbPb2024(
+				     const TString input_file = "HIForest_RawPrime0_medium.txt",
+				     const bool HLT = true,
 				     const char* HLT_trg = "HLT_HIMinimumBiasHF1ANDZDC1nOR_v4",
+				     const char* variable = "hiHF_pf",
 				     const int RUN = 387973, 
 				     const char*RawPrime = "RawPrime0", 
+				     const char* date = "Oct1_incRun",
 				     const char* CoinFilter = "pphfCoincFilterPF3Th5",
 				     const double threshold = 100.0,
 				     const char* label = "Nominal", 
-                     const size_t nbins = 200
+                                     const size_t nbins = 200
 				     )
 {
   // Constant parameters
-  const auto mcXscale = 1.008;
+  const auto mcXscale = 1.012;
   const auto threshold_Min = 1000.0;
   const auto thresholdMax = 4000.0;
 
-  //Tag
-  //const char* testMessage = Form("run%d_HIPhysics%s",RUN, RawPrime);
-  const char* testMessage = Form("HIPhysics%s", RawPrime);
-  //const char* tag = Form("CentralityTable_HFtowers200_DataPbPb_periHYDJETshape_run3v140x01_offline_%s", label) ;
+  //Tags
+  const char* testMessage = Form("HIPhysics%s_%s", RawPrime, date);
+  //const char* tag = Form("CentralityTable_HFtowers200_DataPbPb_periHYDJETshape_run3v141x0_offline_%s", label);
   const char* tag = "CentralityTable_HFtowers200_DataPbPb_periHYDJETshape_run3v140x01_offline_Nominal" ;
   const std::string outputTag = Form("2024Run_HYDMC_xSF%0.2f_%s_Threshold%.0f_%s_Normalisation%.0f_%.0f_%s", mcXscale, CoinFilter, threshold, label, threshold_Min, thresholdMax, testMessage);
 
@@ -81,40 +84,45 @@ void makeDataCentralityTable_NOMINAL(
   
   TFile *outFile = new TFile(Form("CentralityTable_HFtowers200_DataPbPb_usingMC_%s.root", outputTag.c_str()),"recreate");
   TNtuple * nt = new TNtuple("nt","","value");
-  //TNtuple nt("nt","","value");
-  // TH1F*hfData1 = new TH1F("hfData1",Form("hf data run == %d",RUN), 100,0, 10000);
-  //TH1F*hfData2 = new TH1F("hfData2",Form("hf data run != %d",RUN), 100,0, 10000);
+
 
   TH1F*hfData1 = new TH1F("hfData1","hfData1", 100,0, 10000);
   TH1F*hfData2 = new TH1F("hfData2","hfData2", 100,0, 10000);
   TH1F*hfMc1 = new TH1F("hfMc1","hf mc", 100, 0, 10000);
   TH1F*hfMc2 = new TH1F("hfMc2","hf mc", 100, 0, 10000);
   TH1F* hfCombined = new TH1F("hfCombined","hf_combined", 100,0, 10000);
+
   TEfficiency*dataEff1 = new TEfficiency("dataEff1", "dataEff1", 1000, 0, 1000);
   TEfficiency*dataEff2 = new TEfficiency("dataEff2", "dataEff2", 1000, 0, 1000);
   TEfficiency*mcEff= new TEfficiency("mcEff", "mcEff", 1000, 0, 1000);
 
+  TH2D* h_zdc_vs_hihf = new TH2D("h_zdc_vs_hihf", "ZDC vs hiHF_pf;E_{T}^{HF, PF};ZDC E_{sum}", 200, 0, 10000, 250, 0, 800e3);
+  TH1D* h_hf_before_cut = new TH1D("h_hf_before_cut", "hiHF_pf (Before Pileup Cut);E_{T}^{HF, PF};Events", 200, 0, 10000);
+  TH1D* h_hf_after_cut = new TH1D("h_hf_after_cut", "hiHF_pf (After Pileup Cut);E_{T}^{HF, PF};Events", 200, 0, 10000);
 
   const int runNum = 1;
   CentralityBins*bins = new CentralityBins(Form("run%d",runNum), tag, nbins);
-  //CentralityBins * bins = new CentralityBins();
   bins->table_.reserve(nbins);
-
 
 
   UInt_t run;
   t->SetBranchAddress("run", &run);
-  std::map<std::string, int> varI, mcVarI;
-  //const char* numMinHFTowerLbl = Form("pphfCoincFilter2Th%d", hfCoinThr);
-  for (const auto& p : {HLT_trg, "pprimaryVertexFilter", "pclusterCompatibilityFilter", CoinFilter, "hiBin"})
-    t->SetBranchAddress(p, &(varI[p]));
-  std::map<std::string, float> varF, mcVarF;
-  for (const auto& p : {"hiHF", "vz"})
-    t->SetBranchAddress(p, &(varF[p]));
   t->SetBranchStatus("*", 0);
-  for (const auto& p : {"run", "hiHF", HLT_trg, "pprimaryVertexFilter", "pclusterCompatibilityFilter", CoinFilter, "vz", "hiBin"})
-    t->SetBranchStatus(p, 1);
-
+  
+  std::map<std::string, int> varI;
+  std::map<std::string, float> varF;
+  
+  std::vector<std::string> intBranches = {"pprimaryVertexFilter", "pclusterCompatibilityFilter", std::string(CoinFilter), "hiBin"};
+  if (HLT) intBranches.insert(intBranches.begin(), std::string(HLT_trg));
+  for (const std::string& p : intBranches) t->SetBranchAddress(p.c_str(), &(varI[p]));
+  
+  for (const std::string& p : std::vector<std::string>{std::string(variable), "vz", "hiZDC"})
+    t->SetBranchAddress(p.c_str(), &(varF[p]));
+  
+  std::vector<std::string> activeBranches = {"run", std::string(variable), "pprimaryVertexFilter", "pclusterCompatibilityFilter", std::string(CoinFilter), "vz", "hiZDC", "hiBin"};
+  if (HLT) activeBranches.insert(activeBranches.begin() + 2, std::string(HLT_trg));
+  for (const std::string& p : activeBranches) t->SetBranchStatus(p.c_str(), 1);
+  
   
   std::vector<std::pair<float, bool>> values, hfdata;
   std::vector<std::pair<int, bool>> hibin;
@@ -126,135 +134,113 @@ void makeDataCentralityTable_NOMINAL(
   double mcYscale_data(0);
 
   std::cout<<"Total Number of events = "<<Nevents<<std::endl;
- 
+
+
+
+  // --- Pileup Cut Parameters ---
+  const double zdc_cut_intercept = 500e3; // Your best ZDC intercept
+  const double hihf_cut_intercept = 9000;  // Your best hiHF_pf intercept
+  const double pileup_slope = -zdc_cut_intercept / hihf_cut_intercept;
+  
+
+
   for(Long64_t iev = 0; iev < Nevents; iev++) {
     
     if(iev%100000 == 0) cout<<"Processing data event: " << iev << " / " << Nevents << endl;
 
     t->GetEntry(iev);
 
-    
-    const auto& parameter = varF.at("hiHF");
-    const auto& numMinHFTower = varI.at(CoinFilter);
+    // --- Get the variables needed for the pileup cut ---
+    const float current_hihf = varF.at("hiHF_pf");
+    const float current_zdc = varF.at("hiZDC");
 
+    h_zdc_vs_hihf->Fill(current_hihf, current_zdc);
     
-    //const bool pass = (varI.at("HLT_HIMinimumBiasHF1AND_v1")>0 ); //with only HLT trigger!!
-    const bool pass = (varI.at(HLT_trg)>0 && varI.at("pprimaryVertexFilter")>0 && varI.at("pclusterCompatibilityFilter")>0 && varI.at(CoinFilter)>0);
-  
-    //std::cout<<"***************"<<std::endl;    
-    //To check with only HLT_HIZeroBias_v4
-    //const bool pass = (varI.at("HLT_HIZeroBias_v4")>0 && varI.at("pprimaryVertexFilter")>0 && varI.at("pclusterCompatibilityFilter")>0 && numMinHFTower>=hfCoinN);
+    // --- Perform the pileup cut check ---
+    const double y_cut_line = pileup_slope * current_hihf + zdc_cut_intercept;
+    const bool pass_pileup_cut = (current_zdc <= y_cut_line);
+
+    // Original event selection
+    bool pass_original_filters;
+    if (HLT) {pass_original_filters = (varI.at(HLT_trg)>0 && varI.at("pprimaryVertexFilter")>0 && varI.at("pclusterCompatibilityFilter")>0 && varI.at(CoinFilter)>0);}
+    else {pass_original_filters = (varI.at("pprimaryVertexFilter")>0 && varI.at("pclusterCompatibilityFilter")>0 && varI.at(CoinFilter)>0);}
+
+
+    if (pass_original_filters) {
+      h_hf_before_cut->Fill(current_hihf);
+    }
+    
+    // --- Combine original filters with the pileup cut ---
+    const bool pass = pass_original_filters && pass_pileup_cut;
 
     if (pass) {
+      h_hf_after_cut->Fill(current_hihf);
+      const auto& parameter = current_hihf; // or varF.at(variable) if that is hiHF_pf
+      
       hfdata.push_back({parameter, (run == RUN)});
       hibin.push_back({varI.at("hiBin"), (run == RUN)});
+      
       if (run == RUN) {
-        hfData1->Fill(parameter);
-        if (parameter > threshold)
-          values.push_back({parameter, false});
-        if (parameter>threshold_Min && parameter<thresholdMax)
-          mcYscale_data += 1;
+	hfData1->Fill(parameter);
+	if (parameter > threshold)
+	  values.push_back({parameter, false});
+	if (parameter>threshold_Min && parameter<thresholdMax)
+	  mcYscale_data += 1;
       }
       else if (run != RUN)
-        hfData2->Fill(parameter);
-    }
-    if (varI.at(HLT_trg)>0 && varI.at("pprimaryVertexFilter")>0 && varI.at("pclusterCompatibilityFilter")>0) {
-
-      //To check with only HLT_HIZeroBias_v4
-      //if (varI.at("HLT_HIZeroBias_v4")>0 && varI.at("pprimaryVertexFilter")>0 && varI.at("pclusterCompatibilityFilter")>0) {
-      //const bool passTight = (pass && varI.at(numMinHFTowerLbl)>=(hfCoinN+1));
-      ((run == RUN) ? dataEff1 : dataEff2)->Fill(pass, parameter);
+	hfData2->Fill(parameter);
     }
 
-    if (varI.at(HLT_trg)>0 && varI.at("pprimaryVertexFilter")>0 && varI.at("pclusterCompatibilityFilter")>0) {
 
-    //if (varI.at("HLT_HIZeroBias_v4")>0 && varI.at("pprimaryVertexFilter")>0 && varI.at("pclusterCompatibilityFilter")>0) {
-      size_t idx = (parameter > 1000.)*2 + (run == RUN);
-      if ((parameter > 1000.) || (parameter < 140.))//(parameter > 25. && parameter < 60.))//(parameter > 60. && parameter < 140.))
-        numMinHFTowerV[idx][numMinHFTower] += 1;
-    }
-    
-
-
-    //****W/O RUN number *******
-    /*    if (pass) {
-      hfdata.push_back({parameter, ""});
-      hibin.push_back({varI.at("hiBin"), ""});
-      //if (run == RUN) {
-      hfData1->Fill(parameter);
-      if (parameter > threshold)
-	values.push_back({parameter, false});
-      if (parameter>threshold_Min && parameter<thresholdMax)
-	mcYscale_data += 1;
-      //}
-      //else if (run != RUN)
-      // hfData2->Fill(parameter);
-    }
-    
-
-  //=*********** Noise study *************
-
-  if (varI.at(HLT_trg)>0 && varI.at("pprimaryVertexFilter")>0 && varI.at("pclusterCompatibilityFilter")>0) {
-
-      //To check with only HLT_HIZeroBias_v4
-      //if (varI.at("HLT_HIZeroBias_v4")>0 && varI.at("pprimaryVertexFilter")>0 && varI.at("pclusterCompatibilityFilter")>0) {
-      //const bool passTight = (pass && varI.at(numMinHFTowerLbl)>=(hfCoinN+1));
-      ((run == RUN) ? dataEff1 : dataEff2)->Fill(pass, parameter);
+    if (pass){
+    ((run == RUN) ? dataEff1 : dataEff2)->Fill(pass, parameter);
     }
 
-    if (varI.at(HLT_trg)>0 && varI.at("pprimaryVertexFilter")>0 && varI.at("pclusterCompatibilityFilter")>0) {
-
-    //if (varI.at("HLT_HIZeroBias_v4")>0 && varI.at("pprimaryVertexFilter")>0 && varI.at("pclusterCompatibilityFilter")>0) {
-    //  size_t idx = (parameter > 1000.)*2 + (run == RUN);
-      size_t idx = (parameter > 1000.)*2 ;
-      if ((parameter > 1000.) || (parameter < 140.))//(parameter > 25. && parameter < 60.))//(parameter > 60. && parameter < 140.))
-        numMinHFTowerV[idx][numMinHFTower] += 1;
-    }
-    //=**************** End noise study ***********
-
-    */
     
  }//data events loop
-  //inFile.Close();
+  
 
-  // Compute noise study
-  //TH1F*hfNoise1 = new TH1F("hfNoise1",Form("hf noise data run == %d",RUN), 60, 0, 60);
-  //TH1F*hfNoise2 = new TH1F("hfNoise2",Form("hf noise data run != %d",RUN), 60, 0, 60);
+  //Save 2D distribution of hiZDC vs hiHF_pf
+  TCanvas* c_pileup_cut = new TCanvas("c_pileup_cut", "2D Data with Linear Pileup Cut", 900, 700);
+  h_zdc_vs_hihf->Draw("COLZ");
+  
+  // Create the line object using your cut parameters
+  TLine* cutLine = new TLine(0, zdc_cut_intercept, hihf_cut_intercept, 0);
+  cutLine->SetLineColor(kRed);
+  cutLine->SetLineWidth(3);
+  cutLine->SetLineStyle(2); // Dashed line
+  cutLine->Draw("SAME");
+  
 
-  TH1F*hfNoise1 = new TH1F("hfNoise1","hfNoise1", 60, 0, 60);
-  TH1F*hfNoise2 = new TH1F("hfNoise2","hfNoise2", 60, 0, 60);
-  std::array<std::array<double, 200>, 4> nEvt{};
-  for (size_t i=0; i<101; i++)
-    for (size_t j=0; j<4; j++)
-      nEvt[j][i] = std::accumulate(numMinHFTowerV[j].begin()+i, numMinHFTowerV[j].end(), 0);
-  for (size_t i=0; i<60; i++) {
-    hfNoise1->SetBinContent(i+1, (nEvt[0][i] / nEvt[1][i])*(nEvt[3][i] / nEvt[2][i]));
-    hfNoise2->SetBinContent(i+1, nEvt[1][i] / nEvt[1][20]);
-  }
+  
+  // =====================  Process MC ======================
+   TFile inputMCfile("/eos/cms/store/group/phys_heavyions/nsaha/GO2024/2024PbPbRun3/forest_2024Run3_HYD2024_TuneCELLO_official_21072025/Hydjet_MinBias_TuneCELLO_5p36TeV_pythia8/HiForest_2024Run3_HYD2024_TuneCELLO_official_21072025/250721_164051/0000/HiForestMiniAOD_out_combined.root","READ");
 
-  // ----------  Process MC -------------
 
-  //official MC forest file
 
-  TFile inputMCfile(inputMC_file,"READ");	
   if (!inputMCfile.IsOpen()) throw std::logic_error("MC file was not found!");
+
   const auto& tmc = inputMCfile.Get<TTree>("hiEvtAnalyzer/HiTree");
   const auto& tskimanalysismc = inputMCfile.Get<TTree>("skimanalysis/HltTree");
   const auto& thltanalysismc = inputMCfile.Get<TTree>("hltanalysis/HltTree");
+  
   tmc->AddFriend(tskimanalysismc);
   tmc->AddFriend(thltanalysismc);
-
-  for (const auto& p : { "pprimaryVertexFilter", "pclusterCompatibilityFilter", CoinFilter})
-    //for (const auto& p : { "pprimaryVertexFilter", "pclusterCompatibilityFilter", "pphfCoincFilter2Th4"})
-
-  tmc->SetBranchAddress(p, &(mcVarI[p]));
-  for (const auto& p : {"hiHF", "vz"})
-    tmc->SetBranchAddress(p, &(mcVarF[p]));
+  
+  std::map<std::string, int> mcVarI;
+  std::map<std::string, float> mcVarF;
+  
+  std::vector<std::string> mcIntBranches = {"pprimaryVertexFilter", "pclusterCompatibilityFilter", std::string(CoinFilter)};
+  for (const std::string& p : mcIntBranches) tmc->SetBranchAddress(p.c_str(), &(mcVarI[p]));
+  
+  for (const std::string& p : std::vector<std::string>{std::string(variable), "vz"})
+    tmc->SetBranchAddress(p.c_str(), &(mcVarF[p]));
+  
   tmc->SetBranchStatus("*", 0);
-  for (const auto& p : {"hiHF", "pprimaryVertexFilter", "pclusterCompatibilityFilter", CoinFilter, "vz"})
-    //for (const auto& p : {"hiHF", "pprimaryVertexFilter", "pclusterCompatibilityFilter", "pphfCoincFilter2Th4", "vz"})
-    tmc->SetBranchStatus(p, 1);
-
+  
+  std::vector<std::string> mcActiveBranches = {std::string(variable), "pprimaryVertexFilter", "pclusterCompatibilityFilter", std::string(CoinFilter), "vz"};
+  for (const std::string& p : mcActiveBranches) tmc->SetBranchStatus(p.c_str(), 1);
+  
   
 
   Nevents = tmc->GetEntries();
@@ -262,10 +248,9 @@ void makeDataCentralityTable_NOMINAL(
   for(Long64_t iev = 0; iev < Nevents; iev++) {
     if(iev%5000 == 0) cout<<"Processing mc event: " << iev << " / " << Nevents << endl;
     tmc->GetEntry(iev);
-    const auto parameter = mcVarF.at("hiHF") * mcXscale;
+    const auto parameter = mcVarF.at(variable) * mcXscale;
 
     const bool pass = (mcVarI.at("pprimaryVertexFilter")>0 && mcVarI.at("pclusterCompatibilityFilter")>0 && mcVarI.at(CoinFilter)>0);
-    //const bool pass = (mcVarI.at("pprimaryVertexFilter")>0 && mcVarI.at("pclusterCompatibilityFilter")>0 && mcVarI.at("pphfCoincFilter2Th4")>0);
 
 
     if (pass) {
@@ -282,7 +267,7 @@ void makeDataCentralityTable_NOMINAL(
 
 
   
-  //-------------- Scale MC --------------
+  // Scale MC
   const auto mcYscale = mcYscale_data / mcYscale_mc;
   std::cout<<"[INFO] mcYscale = "<< mcYscale << std::endl;
   hfMc1->Scale(mcYscale);
@@ -304,8 +289,9 @@ void makeDataCentralityTable_NOMINAL(
   std::cout << "Selected weighed events = " << totalXsec << std::endl;
   std::cout << "Total efficiency = " << totEff << std::endl;
 
-  // ----------  Create text file where hiHF bin edges (table) are saved -------------
+  // Create text file
 
+  
   ofstream txtfile(Form("output_DataPbPb_usingMC_hiHF_%s.txt", outputTag.c_str()));
   //txtfile << "Input tree: " << inFileName << endl;
   txtfile << "Tag name: " << tag << endl;
@@ -320,7 +306,7 @@ void makeDataCentralityTable_NOMINAL(
   txtfile << "hiHF based cuts are: " << std::endl;
   txtfile << "(";
 
-  //------------------------ Store bin boundaries ----------------------
+  // Store bin boundaries
   const auto size = values.size();
   std::sort(values.begin(), values.end());
   std::vector<double> binboundaries(nbins+1);
@@ -359,36 +345,12 @@ void makeDataCentralityTable_NOMINAL(
   txtfile.close();
 
 
-  //-------- Store histograms ------------
-  outFile->cd();
-  //const auto& dir = outFile.mkdir(tag.c_str());
-  TDirectory *dir = outFile->mkdir(tag);
-  dir->cd();
-  bins->Write();
-  nt->Write();
-  hfData1->Write();
-  hfData2->Write();
-  //c->Write();
-  hfMc1->Write();
-  hfMc2->Write();
-  mcEff->Write();
-  dataEff1->Write();
-  dataEff2->Write();
-  hfNoise1->Write();
-  hfNoise2->Write();
-  hfCombined->Write();
-  outFile->Close();
-
-
   
-  //--------------- Check bin boundaries (w/ a& w/o calibration) --------------
+  // Check bin boundaries
   int newbin, oldbin;
-  TFile outf(Form("compare_centralitybins_%s.root", outputTag.c_str()),"recreate");
-  //TTree t1(Form("anaCentrality_%d", RUN),"analysis level centrality");
-  //TTree t2(Form("anaCentrality_not%d", RUN),"analysis level centrality");
 
-  TTree t1("anaCentrality","analysis level centrality");
-  TTree t2("anaCentrality_","analysis level centrality");
+  TTree t1("CentralityBin_wRun","CentralityBin_wRun");
+  TTree t2("CentralityBin_woRun","CentralityBin_woRun");
   for (auto& t : {&t1, &t2}) {
     t->Branch("newBin",&newbin,"newBin/I");
     t->Branch("oldBin",&oldbin,"oldBin/I");
@@ -404,8 +366,28 @@ void makeDataCentralityTable_NOMINAL(
     oldbin = hibin[i].first;
     (hfdata[i].second ? t1 : t2).Fill();
   }
+
+  outFile->cd();
+  TDirectory *dir = outFile->mkdir(tag);
+  dir->cd();
+  bins->Write();
+  nt->Write();
+  hfData1->Write();
+  hfData2->Write();
+  hfMc1->Write();
+  hfMc2->Write();
+  mcEff->Write();
+  dataEff1->Write();
+  dataEff2->Write();
+  hfCombined->Write();
+
+  h_zdc_vs_hihf->Write();
+  c_pileup_cut->Write();
+  h_hf_before_cut->Write();
+  h_hf_after_cut->Write();
+ 
   t1.Write();
   t2.Write();
-  outf.Close();
-  }
+  outFile->Close();
+}
 
