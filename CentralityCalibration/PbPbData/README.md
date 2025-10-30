@@ -1,9 +1,13 @@
-You'll need to change the following accordingly!
-
-* L29: TString input_file = "Data_forest.txt //data forest files
-
-* L31: const char* HLT_trg = "HLT_HIMinimumBiasHF1ANDZDC1nOR_v4 //HLT trigger
-
-* L36: const char* CoinFilter = "pphfCoincFilterPF3Th5", // CoincFilter
-
-* L252: TFile inputMCfile ("path/MC_forest.root", "READ") //MC forest file
+Instructions to be followed:
+1. You need to perform the calibration inside CMSSW, so make sure to use the relevant CMSSW version.
+2. You need to change the arguments of the function according to PbPb run for the specific year. There will be changes to the HLT trigger, Run number, and coincFilter, along with your forest.txt file.
+3. You should also consider changing the tag according to the run for clarity.
+   For example:
+   ```CentralityTable_HFtowers200_DataPbPb_periHYDJETshape_run3v140x01_offline_Nominal```
+   
+   ```HFtowers200``` -> Tower Based
+   
+   ```periHYDJETshape``` -> Peripheral (below threshold) is taken from HYD MC
+   
+   ```run3v140x01``` -> contains Run3, CMSSW version
+5. The output of the 2024 calibration will be two files: one is a root file containing all the histograms (for hiHF) and tree branch (for hiBin), and another txt file containing the calibration table.
